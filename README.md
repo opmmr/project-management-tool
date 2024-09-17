@@ -1,1 +1,1 @@
-# project-management-tool
+This repository contains the source code for a project management tool developed in Rust. The key functionality of this application focuses on managing projects and tasks effectively. It includes setting up a server, configuring routes for project and task operations, and initializing the application to provide a seamless experience in project management.
