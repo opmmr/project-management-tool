@@ -1,40 +1,36 @@
-// src/handlers.rs
-
-pub async fn index() -> &'static str {
+pub async fn get_main_page() -> &'static str {
     "Hello! This is the main page."
 }
 
-pub async fn projects() -> &'static str {
+pub async fn get_projects_overview() -> &'static str {
     "Here are the projects."
 }
 
-pub async fn tasks() -> &'static str {
+pub async fn get_project_tasks() -> &'static str {
     "Here are the tasks for a given project."
 }
 ```
 
 ```rust
-// src/main.rs
-
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 
-mod handlers; // Import the handlers module
+mod handlers; // Ensure the handlers module is available
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    dotenv().ok(); // Load environment variables from .env file
     let server_url = env::var("SERVER_URL").expect("SERVER_URL must be set");
 
     HttpServer::new(|| {
         App::new()
-            // Use the handlers from the handlers module
-            .route("/", web::get().to(handlers::index))
-            .route("/projects", web::get().to(handlers::projects))
-            .route("/tasks", web::get().to(handlers::tasks))
+            // Routes utilizing renamed handler functions for clarity
+            .route("/", web::get().to(handlers::get_main_page))
+            .route("/projects", web::get().to(handlers::get_projects_overview))
+            .route("/tasks", web::get().to(handlers::get_project_tasks))
     })
-    .bind(&server_url)?
+    .bind(&server_url)? // Bind server to URL specified in environment
     .run()
     .await
 }
