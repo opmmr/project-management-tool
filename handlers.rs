@@ -3,66 +3,66 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use dotenv::dotenv;
 
-struct Config {
-    db_url: String,
+struct AppConfig {
+    database_url: String,
 }
 
-impl Config {
-    pub fn from_env() -> Self {
+impl AppConfig {
+    pub fn load_from_environment() -> Self {
         dotenv().ok(); // Load .env file if it exists
-        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        Config { db_url }
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        AppConfig { database_url }
     }
 }
 
 #[derive(Serialize, Deserialize)]
-struct Item {
+struct ProjectItem {
     id: u32,
     name: String,
     description: String,
 }
 
-mod db {
+mod database {
     use super::*;
 
-    pub fn get_item(id: u32) -> Option<Item> {
-        Some(Item {
-            id,
-            name: "Sample item".to_string(),
-            description: "This is a sample description.".to_string(),
+    pub fn fetch_item_by_id(item_id: u32) -> Option<ProjectItem> {
+        Some(ProjectItem {
+            id: item_id,
+            name: "Sample Project Item".to_string(),
+            description: "This is a sample description for the project item.".to_string(),
         })
     }
 
-    pub fn create_item(item: Item) -> Result<Item, &'static str> {
-        Ok(item)
+    pub fn insert_new_item(new_item: ProjectItem) -> Result<ProjectItem, &'static str> {
+        Ok(new_item) // Simulating item creation in a database
     }
 }
 
-async fn get_item_handler(path: web::Path<(u32,)>) -> impl Responder {
+async fn fetch_item_handler(path: web::Path<(u32,)>) -> impl Responder {
     let item_id = path.into_inner().0;
-    match db::get_item(item_id) {
+    match database::fetch_item_by_id(item_id) {
         Some(item) => HttpResponse::Ok().json(item),
-        None => HttpResponse::NotFound().body("Item not found"),
+        None => HttpResponse::NotFound().body("Project item not found"),
     }
 }
 
-async fn create_item_handler(item: web::Json<Item>) -> impl Responder {
-    match db::create_item(item.into_inner()) {
+async fn create_item_handler(new_item: web::Json<ProjectItem>) -> impl Responder {
+    match database::insert_new_item(new_item.into_inner()) {
         Ok(created_item) => HttpResponse::Created().json(created_item),
-        Err(e) => HttpResponse::BadRequest().body(e),
+        Err(error_message) => HttpResponse::BadRequest().body(error_message),
     }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let config = Config::from_env();
+    let app_config = AppConfig::load_from_environment();
 
-    println!("Starting server with DB URL: {}", config.db_url);
+    println!("Starting server with Database URL: {}", app_config.database_url);
 
     HttpServer::new(|| {
         App::new()
-            .route("/item/{id}", web::get().to(get_item_handler))
-            .route("/item", web::post().to(create_item_handler))
+            .route("/project/item/{id}", web::get().to(fetch_item_handler))
+            .route("/project/item", web::post().to(create_item_handler))
     })
     .bind("127.0.0.1:8080")?
     .run()
